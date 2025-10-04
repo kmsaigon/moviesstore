@@ -32,16 +32,17 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'home',
-    'movies',
-    'accounts',
-    'cart',
+    'django.contrib.admin',      # Django admin interface
+    'django.contrib.auth',       # Django authentication system
+    'django.contrib.contenttypes', # Django content types framework
+    'django.contrib.sessions',   # Django session framework
+    'django.contrib.messages',   # Django messaging framework
+    'django.contrib.staticfiles', # Django static files handling
+    'home',                      # Home app for main pages
+    'movies',                    # Movies app for movie catalog and reviews
+    'accounts',                  # Accounts app for user authentication
+    'cart',                      # Cart app for shopping cart functionality
+    'petitions',                 # Petitions app for movie petition feature
 ]
 
 MIDDLEWARE = [

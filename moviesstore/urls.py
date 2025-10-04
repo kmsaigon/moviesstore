@@ -20,11 +20,12 @@ from django.conf.urls.static import static
 from django.conf import settings
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('home.urls')),
-    path('movies/', include('movies.urls')),
-    path('accounts/', include('accounts.urls')),
-    path('cart/', include('cart.urls')),
+    path('admin/', admin.site.urls),           # Django admin interface
+    path('', include('home.urls')),            # Home app URLs (root path)
+    path('movies/', include('movies.urls')),   # Movies app URLs
+    path('accounts/', include('accounts.urls')), # Accounts app URLs
+    path('cart/', include('cart.urls')),       # Cart app URLs
+    path('petitions/', include('petitions.urls')), # Petitions app URLs
 ]
 
 urlpatterns += static(settings.MEDIA_URL,
