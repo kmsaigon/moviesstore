@@ -4,6 +4,8 @@ from .forms import CustomUserCreationForm, CustomErrorList
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from .models import UserProfile, US_STATES
+from django import forms
 
 # Create your views here.
 @login_required
@@ -56,3 +58,22 @@ def orders(request):
     template_data['orders'] = request.user.order_set.all()
     return render(request, 'accounts/orders.html',
         {'template_data': template_data})
+
+@login_required
+def profile(request):
+    template_data = {}
+    template_data['title'] = 'Profile'
+    
+    # Get or create user profile
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST':
+        new_location = request.POST.get('location')
+        if new_location:
+            profile.location = new_location
+            profile.save()
+            template_data['success_message'] = 'Location updated successfully!'
+    
+    template_data['profile'] = profile
+    template_data['states'] = US_STATES
+    return render(request, 'accounts/profile.html', {'template_data': template_data})
