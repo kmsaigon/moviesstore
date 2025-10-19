@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="p-3 mt-4">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card shadow p-3 mb-4 rounded">
+          <div class="card-body">
+            <h2>Profile</h2>
+            <hr />
+            
+            {% if template_data.success_message %}
+            <div class="alert alert-success" role="alert">
+              {{ template_data.success_message }}
+            </div>
+            {% endif %}
+            
+            <form method="POST">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label for="username" class="form-label">Username</label>
+                <input type="text" class="form-control" value="{{ user.username }}" readonly>
+              </div>
+              <div class="mb-3">
+                <label for="location" class="form-label">Location (State)</label>
+                <select name="location" class="form-control" id="location">
+                  <option value="">Select your state</option>
+                  {% for code, name in template_data.states %}
+                    <option value="{{ code }}" {% if template_data.profile.location == code %}selected{% endif %}>{{ name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <button type="submit" class="btn bg-dark text-white">Update Location</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
