@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">{{ template_data.title }}</h1>
+            
+            <!-- Create New Petition Button -->
+            {% if user.is_authenticated %}
+                <div class="mb-4">
+                    <a href="{% url 'petitions.create' %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Create New Petition
+                    </a>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-4">
+                    <i class="fas fa-info-circle"></i> 
+                    You need to <a href="{% url 'accounts.login' %}">login</a> to create or vote on petitions.
+                </div>
+            {% endif %}
+
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Petitions List -->
+            {% if template_data.petitions %}
+                <div class="row">
+                    {% for petition in template_data.petitions %}
+                        <div class="col-md-6 col-lg-4 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ petition.movie_title }}</h5>
+                                    <p class="card-text">
+                                        <strong>Genre:</strong> {{ petition.genre }}<br>
+                                        <strong>Description:</strong> {{ petition.description|truncatewords:20 }}<br>
+                                        <strong>Why add this movie:</strong> {{ petition.why_add_movie|truncatewords:15 }}
+                                    </p>
+                                    <p class="card-text">
+                                        <small class="text-muted">
+                                            Created by {{ petition.created_by.username }} on {{ petition.created_date|date:"M d, Y" }}
+                                        </small>
+                                    </p>
+                                </div>
+                                <div class="card-footer">
+                                    <div class="row align-items-center">
+                                        <div class="col-8">
+                                            <div class="d-flex justify-content-between">
+                                                <span class="badge bg-success">{{ petition.yes_votes }} Yes</span>
+                                                <span class="badge bg-danger">{{ petition.no_votes }} No</span>
+                                                <span class="badge bg-primary">{{ petition.total_votes }} Total</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            {% if user.is_authenticated %}
+                                                <div class="btn-group" role="group">
+                                                    <form method="post" action="{% url 'petitions.vote' petition.id %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="vote_type" value="yes">
+                                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Vote Yes">
+                                                            <i class="fas fa-thumbs-up"></i>
+                                                        </button>
+                                                    </form>
+                                                    <form method="post" action="{% url 'petitions.vote' petition.id %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="vote_type" value="no">
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Vote No">
+                                                            <i class="fas fa-thumbs-down"></i>
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            {% else %}
+                                                <small class="text-muted">Login to vote</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No petitions have been created yet. 
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'petitions.create' %}">Be the first to create one!</a>
+                    {% else %}
+                        <a href="{% url 'accounts.login' %}">Login</a> to create the first petition.
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock content %}

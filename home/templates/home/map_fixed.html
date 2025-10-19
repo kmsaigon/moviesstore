@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Google Maps API Script -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBYKgTWl3BHtz-m5Xf-_Sa2ZA7Qw2Mcnbo&callback=initMap"></script>
+
+<div class="container-fluid p-0">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-map-marked-alt me-2"></i>
+                        Local Popularity Map
+                    </h3>
+                    <p class="mb-0 mt-2">Click on a state to see trending movies</p>
+                </div>
+                <div class="card-body p-0">
+                    <div id="map" style="height: 600px; width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap Modal for Trending Movies -->
+<div class="modal fade" id="trendingModal" tabindex="-1" aria-labelledby="trendingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="trendingModalLabel">Trending Movies</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="trendingMoviesContent">
+                <!-- Trending movies will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+console.log('Fixed map template loaded');
+
+// Convert Django data to JavaScript
+const stateTrending = {{ template_data.state_trending|safe }};
+const stateCoordinates = {{ template_data.state_coordinates|safe }};
+const statesWithPurchases = {{ template_data.states_with_purchases|safe }};
+
+console.log('State trending data:', stateTrending);
+console.log('State coordinates data:', stateCoordinates);
+console.log('States with purchases:', statesWithPurchases);
+
+let map;
+
+function initMap() {
+    console.log('initMap called successfully!');
+    
+    try {
+        map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 4,
+            center: { lat: 39.8283, lng: -98.5795 },
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+        
+        console.log('Google Maps initialized successfully');
+        
+        // Add markers for states with purchases
+        statesWithPurchases.forEach(stateCode => {
+            const coords = stateCoordinates[stateCode];
+            if (coords) {
+                const marker = new google.maps.Marker({
+                    position: { lat: coords.lat, lng: coords.lng },
+                    map: map,
+                    title: coords.name,
+                    label: stateCode
+                });
+                
+                // Add click listener to show trending movies
+                marker.addListener('click', function() {
+                    showTrendingMovies(stateCode, coords.name);
+                });
+                
+                console.log('Marker added for:', coords.name);
+            }
+        });
+        
+        console.log('All markers added successfully');
+        
+    } catch (error) {
+        console.error('Error initializing Google Maps:', error);
+    }
+}
+
+function showTrendingMovies(stateCode, stateName) {
+    console.log('Showing trending movies for:', stateName);
+    
+    const trendingMovies = stateTrending[stateCode] || [];
+    
+    // Update modal title
+    document.getElementById('trendingModalLabel').textContent = `Trending Movies in ${stateName}`;
+    
+    // Build content
+    let content = '';
+    if (trendingMovies.length === 0) {
+        content = '<p>No trending movies found for this state.</p>';
+    } else {
+        content = '<div class="row">';
+        trendingMovies.forEach((movie, index) => {
+            content += `
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="card-title">${index + 1}. ${movie.movie_title}</h6>
+                            <p class="card-text">
+                                <small class="text-muted">
+                                    Purchased ${movie.total_quantity} times in ${movie.total_orders} orders
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        content += '</div>';
+    }
+    
+    document.getElementById('trendingMoviesContent').innerHTML = content;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('trendingModal'));
+    modal.show();
+}
+
+console.log('Script loaded successfully');
+</script>
+{% endblock content %}

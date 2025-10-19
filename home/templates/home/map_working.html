@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Google Maps API Script -->
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBYKgTWl3BHtz-m5Xf-_Sa2ZA7Qw2Mcnbo&callback=initMap"></script>
+
+<div class="container-fluid p-0">
+    <div class="row">
+        <!-- Map Container -->
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-dark text-white">
+                    <h3 class="mb-0">
+                        <i class="fas fa-map-marked-alt me-2"></i>
+                        Local Popularity Map
+                    </h3>
+                    <p class="mb-0 mt-2">Click on a state to see trending movies in that region</p>
+                </div>
+                <div class="card-body p-0">
+                    <div id="map" style="height: 600px; width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trending Movies Modal -->
+<div class="modal fade" id="trendingModal" tabindex="-1" aria-labelledby="trendingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="trendingModalLabel">
+                    <i class="fas fa-fire me-2"></i>
+                    Trending Movies
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="trendingContent">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Map data from Django
+const stateTrending = {{ template_data.state_trending|safe }};
+const stateCoordinates = {{ template_data.state_coordinates|safe }};
+const statesWithPurchases = {{ template_data.states_with_purchases|safe }};
+
+let map;
+let markers = [];
+
+function initMap() {
+    console.log('initMap function called successfully!');
+    
+    try {
+        // Initialize the map centered on the US
+        map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 4,
+            center: { lat: 39.8283, lng: -98.5795 }, // Center of US
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
+        console.log('Google Maps initialized successfully');
+        
+        // Add markers for states with purchases
+        statesWithPurchases.forEach(stateCode => {
+            const coords = stateCoordinates[stateCode];
+            if (coords) {
+                const marker = new google.maps.Marker({
+                    position: { lat: coords.lat, lng: coords.lng },
+                    map: map,
+                    title: `${coords.name} - Click to see trending movies`,
+                    icon: {
+                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                            <svg width="30" height="30" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="15" cy="15" r="12" fill="#dc3545" stroke="#ffffff" stroke-width="2"/>
+                                <text x="15" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">🔥</text>
+                            </svg>
+                        `),
+                        scaledSize: new google.maps.Size(30, 30),
+                        anchor: new google.maps.Point(15, 15)
+                    }
+                });
+
+                // Add click listener
+                marker.addListener('click', function() {
+                    showTrendingMovies(stateCode, coords.name);
+                });
+
+                markers.push(marker);
+            }
+        });
+        
+        console.log('Markers added:', markers.length);
+        
+    } catch (error) {
+        console.error('Error initializing Google Maps:', error);
+        document.getElementById('map').innerHTML = `
+            <div class="d-flex align-items-center justify-content-center h-100 bg-danger text-white">
+                <div class="text-center">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                    <h5>Google Maps Error</h5>
+                    <p>Error: ${error.message}</p>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function showTrendingMovies(stateCode, stateName) {
+    console.log('Showing trending movies for:', stateCode, stateName);
+    
+    const trendingMovies = stateTrending[stateCode] || [];
+    
+    // Update modal title
+    document.getElementById('trendingModalLabel').innerHTML = 
+        `<i class="fas fa-fire me-2"></i>Trending Movies in ${stateName}`;
+    
+    // Build content
+    let content = '';
+    
+    if (trendingMovies.length === 0) {
+        content = `
+            <div class="text-center py-4">
+                <i class="fas fa-info-circle fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No trending data available</h5>
+                <p class="text-muted">No movie purchases have been recorded for this state yet.</p>
+            </div>
+        `;
+    } else {
+        content = '<div class="row">';
+        
+        trendingMovies.forEach((movieData, index) => {
+            const movie = movieData.movie;
+            const rank = index + 1;
+            const quantity = movieData.total_quantity;
+            const orders = movieData.total_orders;
+            
+            content += `
+                <div class="col-md-6 mb-3">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-2">
+                                <span class="badge bg-danger me-2">#${rank}</span>
+                                <h6 class="card-title mb-0">${movie.name}</h6>
+                            </div>
+                            <div class="row">
+                                <div class="col-4">
+                                    <img src="${movie.image.url}" class="img-fluid rounded" alt="${movie.name}" style="max-height: 100px; object-fit: cover;">
+                                </div>
+                                <div class="col-8">
+                                    <p class="card-text small text-muted">${movie.description.substring(0, 100)}...</p>
+                                    <div class="d-flex justify-content-between">
+                                        <small class="text-success">
+                                            <i class="fas fa-shopping-cart me-1"></i>
+                                            ${quantity} units sold
+                                        </small>
+                                        <small class="text-info">
+                                            <i class="fas fa-receipt me-1"></i>
+                                            ${orders} orders
+                                        </small>
+                                    </div>
+                                    <div class="mt-2">
+                                        <span class="badge bg-primary">$${movie.price}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        content += '</div>';
+    }
+    
+    document.getElementById('trendingContent').innerHTML = content;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('trendingModal'));
+    modal.show();
+}
+
+// Debug logging
+console.log('State trending data:', stateTrending);
+console.log('State coordinates:', stateCoordinates);
+console.log('States with purchases:', statesWithPurchases);
+</script>
+{% endblock content %}
