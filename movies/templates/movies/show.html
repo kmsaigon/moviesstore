@@ -9,6 +9,54 @@
         <hr />
         <p><b>Description:</b> {{ template_data.movie.description }}</p>
         <p><b>Price:</b> ${{ template_data.movie.price }}</p>
+
+        <div class="mb-3">
+          <b>Average Rating:</b>
+          {% if template_data.average_rating %}
+              <span class="text-warning">
+                  {% with ''|center:template_data.average_rating as range %}
+                      {% for i in range %}★{% endfor %}
+                  {% endwith %}
+              </span>
+              ({{ template_data.average_rating|floatformat:1 }} stars from {{ template_data.movie.rating_set.count }} rating{{ template_data.movie.rating_set.count|pluralize }})
+          {% else %}
+              No ratings yet
+          {% endif %}
+      </div>
+
+      {% if user.is_authenticated %}
+      <div class="mb-3">
+          <b>Your Rating:</b>
+          {% if template_data.user_rating %}
+              <span class="text-warning">
+                  {% with ''|center:template_data.user_rating.rating as range %}
+                      {% for i in range %}★{% endfor %}
+                  {% endwith %}
+              </span>
+              ({{ template_data.user_rating.rating }} stars)
+          {% else %}
+              Not rated yet
+          {% endif %}
+          
+          <form method="POST" class="mt-2">
+              {% csrf_token %}
+              <div class="rating-stars">
+                  <b>Rate this movie: </b>
+                  {% for i in "12345" %}
+                  <input type="radio" id="star{{ i }}" name="rating" value="{{ i }}" 
+                         {% if template_data.user_rating.rating == i|add:0 %}checked{% endif %}> 
+                  <label for="star{{ i }}" class="star-label">★</label>
+                  {% endfor %}
+              </div>
+              <button type="submit" class="btn btn-sm bg-dark text-white">Submit Rating</button>
+          </form>
+      </div>
+      {% else %}
+      <div class="mb-3">
+          <p><a href="{% url 'accounts.login' %}">Login</a> to rate this movie.</p>
+      </div>
+      {% endif %}
+
         <p class="card-text">
           <form method="post"
             action="{% url 'cart.add' id=template_data.movie.id %}">
