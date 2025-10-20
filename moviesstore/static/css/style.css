@@ -38,3 +38,30 @@
   width: fit-content;
   max-height: 400px;
 }
+
+.rating-stars {
+    display: inline-block;
+    unicode-bidi: bidi-override;
+    direction: rtl;
+}
+
+.rating-stars input[type="radio"] {
+    display: none;
+}
+
+.rating-stars .star-label {
+    font-size: 24px;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.rating-stars input[type="radio"]:checked ~ .star-label,
+.rating-stars .star-label:hover,
+.rating-stars .star-label:hover ~ .star-label {
+    color: #ffc107;
+}
+
+.rating-stars input[type="radio"]:checked + .star-label {
+    color: #ffc107;
+}
