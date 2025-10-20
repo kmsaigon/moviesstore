@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 # Create your models here.
 class Movie(models.Model):
@@ -10,6 +11,18 @@ class Movie(models.Model):
     image = models.ImageField(upload_to='movie_images/')
     def __str__(self):
         return str(self.id) + ' - ' + self.name
+    
+    def average_rating(self):
+        ratings = self.rating_set.all()
+        if ratings:
+            return sum(r.rating for r in ratings) / len(ratings)
+        return 0
+    
+    def user_rating(self, user):
+        try:
+            return self.rating_set.get(user=user).rating
+        except Rating.DoesNotExist:
+            return None
 
 class Review(models.Model):
     id = models.AutoField(primary_key=True)
@@ -38,3 +51,17 @@ class MovieRequest(models.Model):
 
     def __str__(self):
         return f"{self.name} by {self.user.username}"
+
+class Rating(models.Model):
+    id = models.AutoField(primary_key=True)
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)], help_text="Rating from 1 to 5 stars")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['movie', 'user']
+    
+    def __str__(self):
+        return f"{self.user.username} rated {self.movie.name} {self.rating} stars"
